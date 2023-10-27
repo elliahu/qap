@@ -5,10 +5,12 @@
 
 namespace qap
 {
+    /// @brief Describes a singular instance of QAP
     struct QAP
     {
-        int n;
-        Mat distance;
-        Mat flow;
+        int n;          // number of factories
+        Mat distance;   // distance matrix
+        Mat flow;       // flow matrix
     };
-}
+    
+} // namespace qap

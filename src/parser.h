@@ -7,8 +7,15 @@
 
 namespace qap
 {
+    /// @brief Struct encapsulating parsing logic of QAP problem from source file
     struct Parser
     {
+        
+        /// @brief Parses the input file
+        /// @param path path to the source file
+        /// @param D matrix of distances
+        /// @param F matrix of flow
+        /// @param size number of factories (size of the matrix)
         inline void parse(std::string path, Mat& D, Mat& F, int& size)
         {
             std::ifstream input_file(path);
