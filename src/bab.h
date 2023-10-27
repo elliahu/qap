@@ -144,7 +144,7 @@ namespace qap
             branch_and_bound_threaded(problem, best_permutation, best_cost, 0);
 
             while (threadPool.busy())
-                ;
+                continue;
 
             threadPool.stop();
 

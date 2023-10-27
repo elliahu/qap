@@ -7,7 +7,7 @@
 /**
  * Matej Elias 2023
  *
- * Compile and run by running:
+ * Compile and run by executing:
  * make
  *
  */
