@@ -22,33 +22,35 @@ namespace qap
             {
                 for (int j = 0; j < problem.n; ++j)
                 {
-                    cost += problem.distance[i][j] * problem.flow[i][j];
+                    cost += problem.distance[i][j] * problem.flow[permutation[i]][permutation[j]];
                 }
             }
             return cost;
         }
 
-        static inline void branch_and_bound(QAP &problem, std::vector<int> &best_permutation, int &best_cost, std::vector<int> &current_permutation, int current_cost, int level)
+        static inline void branch_and_bound(QAP &problem, std::vector<int> &best_permutation, int &best_cost, std::vector<int> &current_permutation, int level)
         {
             if (level == problem.n)
             {
+                int current_cost = calculate_cost(problem, current_permutation);
                 if (current_cost < best_cost)
                 {
                     best_cost = current_cost;
                     best_permutation = current_permutation;
                 }
-                return;
             }
-
-            for (int i = level; i < problem.n; ++i)
+            else
             {
-                std::swap(current_permutation[i], current_permutation[level]);
-                int new_cost = calculate_cost(problem,current_permutation);
-                if (new_cost < best_cost)
+                for (int i = level; i < problem.n; ++i)
                 {
-                    branch_and_bound(problem, best_permutation, best_cost, current_permutation, new_cost, level + 1);
+                    std::swap(current_permutation[i], current_permutation[level]);
+                    int new_cost = calculate_cost(problem, current_permutation);
+                    if (new_cost < best_cost)
+                    {
+                        branch_and_bound(problem, best_permutation, best_cost, current_permutation, level + 1);
+                    }
+                    std::swap(current_permutation[i], current_permutation[level]);
                 }
-                std::swap(current_permutation[i], current_permutation[level]);
             }
         }
 
@@ -63,16 +65,14 @@ namespace qap
             std::vector<int> best_permutation(problem.n);
             int best_cost = std::numeric_limits<int>::max();
 
-            branch_and_bound(problem, best_permutation, best_cost, permutation, 0, 0);
+            branch_and_bound(problem, best_permutation, best_cost, permutation, 0);
 
             Solution solution{
                 .permutation = best_permutation,
-                .cost = best_cost
-            };
+                .cost = best_cost};
 
             return solution;
         }
-
-    }; 
+    };
 
 } // namepsace qap
