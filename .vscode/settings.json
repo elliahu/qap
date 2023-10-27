@@ -1,9 +1,16 @@
 {
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/mnt/c/dev/qap/bin",
+            "binaryPath": "/mnt/c/dev/qap/bin/main",
+            "binaryArgs": []
+        }
+    ],
     "files.associations": {
-        "*.tcc": "cpp",
         "array": "cpp",
         "atomic": "cpp",
         "bit": "cpp",
+        "*.tcc": "cpp",
         "cctype": "cpp",
         "clocale": "cpp",
         "cmath": "cpp",

@@ -9,20 +9,30 @@ namespace qap
 {
     struct Parser
     {
-        Mat D, F;
-        size_t size;
-
-        inline void parse(std::string path)
+        inline void parse(std::string path, Mat& D, Mat& F, int& size)
         {
             std::ifstream input_file(path);
+            if(input_file.fail())
+            {
+                std::cout << "FILE ERROR" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            
             std::string line;
 
             // read the size
             std::getline(input_file, line);
             sscanf(line.c_str(), "%d", &size);
 
-            D = Mat(size, std::vector<int>(size));
-            F = Mat(size, std::vector<int>(size));
+            D.clear();
+            D.resize(size);
+            for(auto& d: D)
+                d.resize(size);
+
+            F.clear();
+            F.resize(size);
+            for(auto& f: F)
+                f.resize(size);
 
             // skip line
             std::getline(input_file, line);
@@ -62,27 +72,5 @@ namespace qap
                 }
             }
         }
-
-        inline void get_D(Mat &d)
-        {
-            d.clear();
-            d = Mat(size, std::vector<int>(size));
-            for(int i = 0; i < size; i++)
-                for(int j = 0; j < size; j++)
-                    d[i][j] = D[i][j];
-        }
-
-        inline Mat get_D() {return D;}
-
-        inline void get_F(Mat &f)
-        {
-            f.clear();
-            f = Mat(size, std::vector<int>(size));
-            for(int i = 0; i < size; i++)
-                for(int j = 0; j < size; j++)
-                    f[i][j] = F[i][j];
-        }
-
-        inline Mat get_F() {return F;}
     };
 }

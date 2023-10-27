@@ -1,78 +1,78 @@
 #pragma once
 #include <vector>
 #include <algorithm>
+#include <limits>
 #include "qap.h"
 
 namespace qap
 {
-    struct State
+    struct BranchAndBound
     {
-        int cost;
-        std::vector<int> assignment;
-        int level;
 
-        State(int n) : cost(0), assignment(n), level(0) {}
-    };
-
-    // Function to compute the lower bound for the current state
-    int computeLowerBound(const QAP &qap, const State &state)
-    {
-        int bound = 0;
-        for (int i = 0; i < state.level; ++i)
+        struct Solution
         {
-            for (int j = 0; j < state.level; ++j)
+            std::vector<int> permutation;
+            int cost;
+        };
+
+        static inline int calculate_cost(QAP &problem, std::vector<int> &permutation)
+        {
+            int cost = 0;
+            for (int i = 0; i < problem.n; ++i)
             {
-                bound += qap.distance[i][state.level] * qap.flow[state.assignment[i]][state.assignment[state.level]];
+                for (int j = 0; j < problem.n; ++j)
+                {
+                    cost += problem.distance[i][j] * problem.flow[i][j];
+                }
             }
-        }
-        return bound;
-    }
-
-    // Recursive branch and bound algorithm
-    int branchAndBound(const QAP &qap, State &state, int &bestCost)
-    {
-        if (state.level == qap.n)
-        {
-            // Leaf node reached, update the best cost
-            bestCost = std::min(bestCost, state.cost);
-            return state.cost;
+            return cost;
         }
 
-        int lowerBound = computeLowerBound(qap, state);
-        if (lowerBound >= bestCost)
+        static inline void branch_and_bound(QAP &problem, std::vector<int> &best_permutation, int &best_cost, std::vector<int> &current_permutation, int current_cost, int level)
         {
-            // Prune the subtree if lower bound is not promising
-            return INF;
-        }
-
-        int minCost = INF;
-        for (int i = 0; i < qap.n; ++i)
-        {
-            if (std::find(state.assignment.begin(), state.assignment.end(), i) == state.assignment.end())
+            if (level == problem.n)
             {
-                state.assignment[state.level] = i;
-                state.cost += qap.distance[state.level][i] * qap.flow[state.assignment[state.level]][state.level];
-                state.level++;
+                if (current_cost < best_cost)
+                {
+                    best_cost = current_cost;
+                    best_permutation = current_permutation;
+                }
+                return;
+            }
 
-                int cost = branchAndBound(qap, state, bestCost);
-                minCost = std::min(minCost, cost);
-
-                state.level--;
-                state.cost -= qap.distance[state.level][i] * qap.flow[state.assignment[state.level]][state.level];
+            for (int i = level; i < problem.n; ++i)
+            {
+                std::swap(current_permutation[i], current_permutation[level]);
+                int new_cost = calculate_cost(problem,current_permutation);
+                if (new_cost < best_cost)
+                {
+                    branch_and_bound(problem, best_permutation, best_cost, current_permutation, new_cost, level + 1);
+                }
+                std::swap(current_permutation[i], current_permutation[level]);
             }
         }
 
-        return minCost;
-    }
+        static inline Solution solve(QAP &problem)
+        {
+            std::vector<int> permutation(problem.n);
+            for (int i = 0; i < problem.n; ++i)
+            {
+                permutation[i] = i;
+            }
 
-    int solveQAP(const QAP &qap)
-    {
-        int n = qap.n;
-        int bestCost = INF;
+            std::vector<int> best_permutation(problem.n);
+            int best_cost = std::numeric_limits<int>::max();
 
-        State state(n);
-        int finalCost = branchAndBound(qap, state, bestCost);
+            branch_and_bound(problem, best_permutation, best_cost, permutation, 0, 0);
 
-        return bestCost;
-    }
-}
+            Solution solution{
+                .permutation = best_permutation,
+                .cost = best_cost
+            };
+
+            return solution;
+        }
+
+    }; 
+
+} // namepsace qap

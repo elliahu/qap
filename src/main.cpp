@@ -18,17 +18,18 @@ void print_matrix(qap::Mat& mat)
 
 int main()
 {
+    qap::QAP qap{};
     qap::Parser parser{};
-    parser.parse("data/data.txt");
+    parser.parse("../data/data.txt", qap.distance, qap.flow, qap.n);
+    std::cout << "Loaded mat size: " << qap.n << std::endl;
+    
+    auto solution = qap::BranchAndBound::solve(qap);
 
-    qap::QAP qap{
-        .n = parser.size,
-        .distance = parser.get_D(),
-        .flow = parser.get_F()
-    };
-
-    int min_cost = solveQAP(qap);
-    std::cout << "Minimum cost: " << min_cost << std::endl;
+    std::cout << "Best cost: " << solution.cost << std::endl;
+    for(auto& value : solution.permutation)
+    {
+        std::cout <<  value << std::endl;
+    }
 
     return 0;
 }
