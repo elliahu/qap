@@ -1,5 +1,7 @@
 #include <iostream>
 #include "parser.h"
+#include "qap.h"
+#include "bab.h"
 
 void print_matrix(qap::Mat& mat)
 {
@@ -19,15 +21,14 @@ int main()
     qap::Parser parser{};
     parser.parse("data/data.txt");
 
-    qap::Mat D ,F;
+    qap::QAP qap{
+        .n = parser.size,
+        .distance = parser.get_D(),
+        .flow = parser.get_F()
+    };
 
-    parser.get_D(D);
-    parser.get_F(F);
-
-    print_matrix(D);
-
-    print_matrix(F);
-
+    int min_cost = solveQAP(qap);
+    std::cout << "Minimum cost: " << min_cost << std::endl;
 
     return 0;
 }

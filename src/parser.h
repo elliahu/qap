@@ -20,7 +20,6 @@ namespace qap
             // read the size
             std::getline(input_file, line);
             sscanf(line.c_str(), "%d", &size);
-            std::cout << "Reading the size of " << size << std::endl;
 
             D = Mat(size, std::vector<int>(size));
             F = Mat(size, std::vector<int>(size));
@@ -73,6 +72,8 @@ namespace qap
                     d[i][j] = D[i][j];
         }
 
+        inline Mat get_D() {return D;}
+
         inline void get_F(Mat &f)
         {
             f.clear();
@@ -81,5 +82,7 @@ namespace qap
                 for(int j = 0; j < size; j++)
                     f[i][j] = F[i][j];
         }
+
+        inline Mat get_F() {return F;}
     };
 }

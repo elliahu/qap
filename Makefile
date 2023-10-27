@@ -1,6 +1,6 @@
 # based on https://gist.github.com/zobayer1/7265c698d1b024bb7723bc624aeedeb3
 # Pre-compiler and Compiler flags
-CXX_FLAGS := -Wall -Wextra -std=c++20 -ggdb
+CXX_FLAGS := -Wall -Wextra -std=c++20 -ggdb -g
 PRE_FLAGS := -MMD -MP
 
 # Project directory structure
