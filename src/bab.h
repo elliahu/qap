@@ -19,7 +19,7 @@ namespace qap
         struct Solution
         {
             Permutation permutation; // best permutation
-            int cost;                     // cost of the best permutation
+            int cost;                // cost of the best permutation
         };
 
         /// @brief Calculates the cost of a permutation
@@ -73,9 +73,11 @@ namespace qap
                     int new_cost = calculate_cost(problem, current_permutation);
 
                     best_cost_mutex.lock();
-                    if (new_cost < best_cost)
+                    bool should_branch = new_cost < best_cost;
+                    best_cost_mutex.unlock();
+
+                    if (should_branch)
                     {
-                        best_cost_mutex.unlock();
                         branch_and_bound(
                             problem,
                             best_permutation,
@@ -83,7 +85,7 @@ namespace qap
                             current_permutation,
                             level + 1);
                     }
-                    best_cost_mutex.unlock();
+
                     std::swap(current_permutation[i], current_permutation[level]);
                 }
             }
