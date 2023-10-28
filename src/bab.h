@@ -11,14 +11,14 @@ namespace qap
     /// @brief Struct used to encapsulate logic of solving a singular instance of QAP using BAB algorithm
     struct BranchAndBound
     {
-        threading::ThreadPool threadPool{}; // threadpool used to queue jobs
+        threading::ThreadPool thread_pool{}; // threadpool used to queue jobs
         std::mutex best_cost_mutex;
         std::mutex best_permutation_mutex;
 
         /// @brief Solution of the QAP
         struct Solution
         {
-            std::vector<int> permutation; // best permutation
+            Permutation permutation; // best permutation
             int cost;                     // cost of the best permutation
         };
 
@@ -26,7 +26,7 @@ namespace qap
         /// @param problem instance of QAP problem
         /// @param permutation permutation for which the cost will be calculated
         /// @return returns the cost of the permutation
-        inline int calculate_cost(QAP &problem, std::vector<int> &permutation)
+        inline int calculate_cost(QAP &problem, Permutation &permutation)
         {
             int cost = 0;
             for (int i = 0; i < problem.n; ++i)
@@ -47,9 +47,9 @@ namespace qap
         /// @param level level of deepness, starts at 0
         inline void branch_and_bound(
             QAP &problem,
-            std::vector<int> &best_permutation,
+            Permutation &best_permutation,
             int &best_cost,
-            std::vector<int> &current_permutation,
+            Permutation &current_permutation,
             int level)
         {
             if (level == problem.n)
@@ -96,16 +96,16 @@ namespace qap
         /// @param level level of deepness, starts at 0
         inline void branch_and_bound_threaded(
             QAP &problem,
-            std::vector<int> &best_permutation,
+            Permutation &best_permutation,
             int &best_cost,
             int level)
         {
             for (int i = level; i < problem.n; ++i)
             {
-                threadPool.queueJob(
+                thread_pool.queueJob(
                     [&, i, level]
                     {
-                        std::vector<int> current_permutation(problem.n);
+                        Permutation current_permutation(problem.n);
                         for (int i = 0; i < problem.n; ++i)
                         {
                             current_permutation[i] = i;
@@ -126,27 +126,26 @@ namespace qap
                                 level + 1);
                         }
                         best_cost_mutex.unlock();
-                        std::swap(current_permutation[i], current_permutation[level]);
                     });
             }
         }
 
         /// @brief Helper function that starts the BAB computation and returns the best solution found
-        /// @param problem isntance of QAP problem
+        /// @param problem instance of QAP problem
         /// @return solution of the QAP problem
         inline Solution solve(QAP &problem)
         {
-            std::vector<int> best_permutation(problem.n);
-            int best_cost = std::numeric_limits<int>::max();
+            Permutation best_permutation(problem.n);
+            int best_cost = qap::INF;
 
-            threadPool.start();
+            thread_pool.start();
 
             branch_and_bound_threaded(problem, best_permutation, best_cost, 0);
 
-            while (threadPool.busy())
+            while (thread_pool.busy())
                 continue;
 
-            threadPool.stop();
+            thread_pool.stop();
 
             return {
                 .permutation = best_permutation,
