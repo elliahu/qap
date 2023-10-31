@@ -26,7 +26,7 @@ namespace qap
         /// @param problem instance of QAP problem
         /// @param permutation permutation for which the cost will be calculated
         /// @return returns the cost of the permutation
-        inline int calculate_cost(QAP &problem, Permutation &permutation)
+        inline int calculate_lower_bound(QAP &problem, Permutation &permutation)
         {
             int cost = 0;
             for (int i = 0; i < problem.n; ++i)
@@ -56,7 +56,7 @@ namespace qap
             {
                 best_cost_mutex.lock();
                 best_permutation_mutex.lock();
-                int current_cost = calculate_cost(problem, current_permutation);
+                int current_cost = calculate_lower_bound(problem, current_permutation);
                 if (current_cost < best_cost)
                 {
                     best_cost = current_cost;
@@ -70,7 +70,7 @@ namespace qap
                 for (int i = level; i < problem.n; ++i)
                 {
                     std::swap(current_permutation[i], current_permutation[level]);
-                    int new_cost = calculate_cost(problem, current_permutation);
+                    int new_cost = calculate_lower_bound(problem, current_permutation);
 
                     best_cost_mutex.lock();
                     bool should_branch = new_cost < best_cost;
@@ -114,7 +114,7 @@ namespace qap
                         }
 
                         std::swap(current_permutation[i], current_permutation[level]);
-                        int new_cost = calculate_cost(problem, current_permutation);
+                        int new_cost = calculate_lower_bound(problem, current_permutation);
 
                         best_cost_mutex.lock();
                         if (new_cost < best_cost)
