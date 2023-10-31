@@ -116,14 +116,12 @@ namespace qap
             int level)
         {
             if (level == problem.n)
-            {   
+            {
                 best_cost_mutex.lock();
                 best_permutation_mutex.lock();
                 int current_cost = calculate_cost(problem, current_permutation);
                 if (current_cost < best_cost)
                 {
-                    best_cost = current_cost;
-                    best_permutation = current_permutation;
                 }
                 best_cost_mutex.unlock();
                 best_permutation_mutex.unlock();
@@ -149,9 +147,14 @@ namespace qap
 
                         if (should_branch)
                         {
+                            best_cost_mutex.lock();
+                            best_permutation_mutex.lock();
+                            best_cost = new_cost;
+                            best_permutation = current_permutation;
+                            best_cost_mutex.unlock();
+                            best_permutation_mutex.unlock();
                             branch_and_bound(problem, best_permutation, best_cost, current_permutation, level + 1);
                         }
-
                         std::swap(current_permutation[i], current_permutation[level]);
                     }
                 }
@@ -167,34 +170,29 @@ namespace qap
             QAP &problem,
             Permutation &best_permutation,
             int &best_cost,
-            Permutation &initial_permutation,
             int level)
         {
-            int lower_bound = calculate_lower_bound(problem, initial_permutation);
-
-            if (lower_bound < best_cost)
+            Permutation initial_permutation = get_initial_permutation(problem.n);
+            for (int i = level; i < problem.n; ++i)
             {
-                for (int i = level; i < problem.n; ++i)
-                {
-                    thread_pool.queueJob(
-                        [&, i, level]
+                thread_pool.queueJob(
+                    [&, i, level, initial_permutation]
+                    {
+                        Permutation current_permutation = initial_permutation;
+                        std::swap(current_permutation[i], current_permutation[level]);
+                        int new_cost = calculate_cost(problem, current_permutation);
+
+                        best_cost_mutex.lock();
+                        bool shoul_branch = new_cost < best_cost;
+                        best_cost_mutex.unlock();
+
+                        if (shoul_branch)
                         {
-                            Permutation current_permutation = initial_permutation;
-                            std::swap(current_permutation[i], current_permutation[level]);
-                            int new_cost = calculate_cost(problem, current_permutation);
+                            branch_and_bound(problem, best_permutation, best_cost, current_permutation, level + 1);
+                        }
 
-                            best_cost_mutex.lock();
-                            bool shoul_branch = new_cost < best_cost;
-                            best_cost_mutex.unlock();
-
-                            if (shoul_branch)
-                            {
-                                branch_and_bound(problem, best_permutation, best_cost, current_permutation, level + 1);
-                            }
-
-                            std::swap(current_permutation[i], current_permutation[level]);
-                        });
-                }
+                        std::swap(current_permutation[i], current_permutation[level]);
+                    });
             }
         }
 
@@ -203,13 +201,12 @@ namespace qap
         /// @return solution of the QAP problem
         inline Solution solve(QAP &problem)
         {
-            Permutation initial_permutation = get_initial_permutation(problem.n);
-            Permutation best_permutation = initial_permutation;
+            Permutation best_permutation = get_initial_permutation(problem.n);
             int best_cost = std::numeric_limits<int>::max();
 
             thread_pool.start();
 
-            branch_and_bound_threaded(problem, best_permutation,best_cost, initial_permutation, 0);
+            branch_and_bound_threaded(problem, best_permutation, best_cost, 0);
 
             while (thread_pool.busy())
                 continue;
