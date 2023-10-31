@@ -10,6 +10,7 @@
  * Compile and run by executing:
  * make
  *
+ * or hit f5 in VS Code
  */
 
 int main()
@@ -17,6 +18,7 @@ int main()
     qap::QAP qap{};
     qap::Parser parser{};
     parser.parse("../data/data.txt", qap.distance, qap.flow, qap.n);
+    std::cout << "Available threads: " << std::thread::hardware_concurrency() << std::endl;
     std::cout << "Loaded mat size: " << qap.n << std::endl;
 
     qap::BranchAndBound bab{};
