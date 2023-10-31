@@ -22,11 +22,28 @@ namespace qap
             int cost;                // cost of the best permutation
         };
 
+        /// @brief Function to initialize the permutation deterministically
+        /// @param perm Permutations
+        void initialize_permutation(Permutation &perm) {
+            for (int i = 0; i < perm.size(); ++i) {
+                perm[i] = i;
+            }
+        }
+
+        /// @brief Function to set initial permutation consistently
+        /// @param n size of the permutations
+        /// @return generated permutation
+        Permutation get_initial_permutation(int n) {
+            Permutation initial_permutation(n);
+            initialize_permutation(initial_permutation);
+            return initial_permutation;
+        }
+
         /// @brief Calculates the cost of a permutation
         /// @param problem instance of QAP problem
         /// @param permutation permutation for which the cost will be calculated
         /// @return returns the cost of the permutation
-        inline int calculate_lower_bound(QAP &problem, Permutation &permutation)
+        inline int calculate_cost(QAP &problem, Permutation &permutation)
         {
             int cost = 0;
             for (int i = 0; i < problem.n; ++i)
@@ -37,6 +54,48 @@ namespace qap
                 }
             }
             return cost;
+        }
+
+        /// @brief Function to compute the reduced cost matrix for the current state
+        /// @param problem QAP problem
+        /// @param current_permutation current permutation 
+        /// @param reduced_cost reduced cost
+        void compute_reduced_cost_matrix(QAP &problem, Permutation &current_permutation, std::vector<std::vector<int>> &reduced_cost)
+        {
+            int n = problem.n;
+            reduced_cost.resize(n, std::vector<int>(n, 0));
+
+            for (int facility1 = 0; facility1 < n; ++facility1)
+            {
+                for (int facility2 = 0; facility2 < n; ++facility2)
+                {
+                    int diff = problem.distance[facility1][facility1] - problem.distance[facility1][facility2] +
+                               problem.distance[facility2][facility2] - problem.distance[facility2][facility1];
+
+                    reduced_cost[facility1][facility2] = diff * problem.flow[current_permutation[facility1]][current_permutation[facility2]];
+                }
+            }
+        }
+
+        /// @brief Calculates lower bound at current permutation
+        /// @param problem QAP problem
+        /// @param current_permutation current permutation 
+        /// @return returns calculated lower bound
+        int calculate_lower_bound(QAP &problem, Permutation &current_permutation)
+        {
+            int lower_bound = 0;
+            std::vector<std::vector<int>> reduced_cost;
+            compute_reduced_cost_matrix(problem, current_permutation, reduced_cost);
+
+            for (int facility1 = 0; facility1 < problem.n; ++facility1)
+            {
+                for (int facility2 = 0; facility2 < problem.n; ++facility2)
+                {
+                    lower_bound += reduced_cost[facility1][facility2];
+                }
+            }
+
+            return lower_bound;
         }
 
         /// @brief Recursive function for solving QAP problem using BAB algorithm
@@ -54,39 +113,31 @@ namespace qap
         {
             if (level == problem.n)
             {
-                best_cost_mutex.lock();
-                best_permutation_mutex.lock();
-                int current_cost = calculate_lower_bound(problem, current_permutation);
+                int current_cost = calculate_cost(problem, current_permutation);
                 if (current_cost < best_cost)
                 {
                     best_cost = current_cost;
                     best_permutation = current_permutation;
                 }
-                best_permutation_mutex.unlock();
-                best_cost_mutex.unlock();
             }
             else
             {
-                for (int i = level; i < problem.n; ++i)
+                int lower_bound = calculate_lower_bound(problem, current_permutation);
+
+                if (lower_bound < best_cost)
                 {
-                    std::swap(current_permutation[i], current_permutation[level]);
-                    int new_cost = calculate_lower_bound(problem, current_permutation);
-
-                    best_cost_mutex.lock();
-                    bool should_branch = new_cost < best_cost;
-                    best_cost_mutex.unlock();
-
-                    if (should_branch)
+                    for (int i = level; i < problem.n; ++i)
                     {
-                        branch_and_bound(
-                            problem,
-                            best_permutation,
-                            best_cost,
-                            current_permutation,
-                            level + 1);
-                    }
+                        std::swap(current_permutation[i], current_permutation[level]);
+                        int new_cost = calculate_cost(problem, current_permutation);
 
-                    std::swap(current_permutation[i], current_permutation[level]);
+                        if (new_cost < best_cost)
+                        {
+                            branch_and_bound(problem, best_permutation, best_cost, current_permutation, level + 1);
+                        }
+
+                        std::swap(current_permutation[i], current_permutation[level]);
+                    }
                 }
             }
         }
@@ -114,7 +165,7 @@ namespace qap
                         }
 
                         std::swap(current_permutation[i], current_permutation[level]);
-                        int new_cost = calculate_lower_bound(problem, current_permutation);
+                        int new_cost = calculate_cost(problem, current_permutation);
 
                         best_cost_mutex.lock();
                         if (new_cost < best_cost)
@@ -137,12 +188,13 @@ namespace qap
         /// @return solution of the QAP problem
         inline Solution solve(QAP &problem)
         {
-            Permutation best_permutation(problem.n);
-            int best_cost = qap::INF;
+            Permutation initial_permutation = get_initial_permutation(problem.n);
+            Permutation best_permutation = initial_permutation;
+            int best_cost = std::numeric_limits<int>::max();
 
             thread_pool.start();
 
-            branch_and_bound_threaded(problem, best_permutation, best_cost, 0);
+            branch_and_bound(problem, best_permutation, best_cost, initial_permutation, 0);
 
             while (thread_pool.busy())
                 continue;
@@ -151,7 +203,8 @@ namespace qap
 
             return {
                 .permutation = best_permutation,
-                .cost = best_cost};
+                .cost = best_cost
+            };
         }
     };
 
