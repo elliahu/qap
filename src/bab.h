@@ -114,6 +114,11 @@ namespace qap
             Permutation &current_permutation,
             int level)
         {
+            best_cost_mutex.lock();
+            bool prune = calculate_cost(problem, current_permutation) >= best_cost;
+            best_cost_mutex.unlock();
+            if (prune) return;
+            
             if (level == problem.n)
             {
                 best_cost_mutex.lock();
@@ -150,6 +155,7 @@ namespace qap
                         {
                             branch_and_bound(problem, best_permutation, best_cost, current_permutation, level + 1);
                         }
+
                         std::swap(current_permutation[i], current_permutation[level]);
                     }
                 }
