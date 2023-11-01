@@ -8,7 +8,6 @@
 
 namespace threading
 {
-    // initially based of https://stackoverflow.com/questions/15752659/thread-pooling-in-c11
     /// @brief Class representing a thread pool, allowing for job submition
     class ThreadPool
     {
@@ -19,13 +18,13 @@ namespace threading
             const uint32_t num_threads = std::thread::hardware_concurrency();
             for (uint32_t ii = 0; ii < num_threads; ++ii)
             {
-                threads.emplace_back(std::thread(&threadLoop, this));
+                threads.emplace_back(std::thread(&thread_loop, this));
             }
         }
 
         /// @brief Submit a job
         /// @param job instance of a job
-        inline void queueJob(const std::function<void()> &job)
+        inline void queue_job(const std::function<void()> &job)
         {
             {
                 std::unique_lock<std::mutex> lock(queue_mutex);
@@ -66,7 +65,7 @@ namespace threading
 
 
     private:
-        inline void threadLoop()
+        inline void thread_loop()
         {
             while (true)
             {

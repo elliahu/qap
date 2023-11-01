@@ -19,7 +19,7 @@ int main()
     qap::Parser parser{};
     parser.parse("../data/data.txt", qap.distance, qap.flow, qap.n);
     std::cout << "Available threads: " << std::thread::hardware_concurrency() << std::endl;
-    std::cout << "Loaded mat size: " << qap.n << std::endl;
+    std::cout << "Loaded mat size: " << qap.n << std::endl << std::endl;
 
     qap::BranchAndBound bab{};
     auto solution = bab.solve(qap);

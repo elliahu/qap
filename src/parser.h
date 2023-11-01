@@ -80,4 +80,4 @@ namespace qap
             }
         }
     };
-}
+} // namepsace qap

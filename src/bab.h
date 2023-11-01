@@ -24,7 +24,7 @@ namespace qap
 
         /// @brief Function to initialize the permutation deterministically
         /// @param perm Permutations
-        void initialize_permutation(Permutation &perm)
+        inline void initialize_permutation(Permutation &perm)
         {
             for (int i = 0; i < perm.size(); ++i)
             {
@@ -35,7 +35,7 @@ namespace qap
         /// @brief Function to set initial permutation consistently
         /// @param n size of the permutations
         /// @return generated permutation
-        Permutation get_initial_permutation(int n)
+        inline Permutation get_initial_permutation(int n)
         {
             Permutation initial_permutation(n);
             initialize_permutation(initial_permutation);
@@ -49,9 +49,9 @@ namespace qap
         inline int calculate_cost(QAP &problem, Permutation &permutation)
         {
             int cost = 0;
-            for (int i = 0; i < problem.n; ++i)
+            for (int i = 0; i < problem.n; i++)
             {
-                for (int j = 0; j < problem.n; ++j)
+                for (int j = 0; j < problem.n; j++)
                 {
                     cost += problem.distance[i][j] * problem.flow[permutation[i]][permutation[j]];
                 }
@@ -64,12 +64,12 @@ namespace qap
         /// @param current_permutation current permutation
         /// @param level level to which the permutation is set
         /// @return returns calculated lower bound
-        int calculate_lower_bound(QAP &problem, Permutation &current_permutation, int level)
+        inline int calculate_lower_bound(QAP &problem, Permutation &current_permutation, int level)
         {
             int lower_bound = 0;
-            for (int i = 0; i < std::min(problem.n, level); ++i)
+            for (int i = 0; i < std::min(problem.n, level); i++)
             {
-                for (int j = 0; j < std::min(problem.n, level); ++j)
+                for (int j = 0; j < std::min(problem.n, level); j++)
                 {
                     lower_bound += problem.distance[i][j] * problem.flow[current_permutation[i]][current_permutation[j]];
                 }
@@ -94,12 +94,8 @@ namespace qap
             {
                 best_cost_mutex.lock();
                 best_permutation_mutex.lock();
-                int current_cost = calculate_cost(problem, current_permutation);
-                if (current_cost < best_cost)
-                {
-                    best_cost = current_cost;
-                    best_permutation = current_permutation;
-                }
+                best_cost = calculate_cost(problem, current_permutation);
+                best_permutation = current_permutation;
                 best_cost_mutex.unlock();
                 best_permutation_mutex.unlock();
             }
@@ -113,7 +109,7 @@ namespace qap
 
                 if (!prune)
                 {
-                    for (int i = level; i < problem.n; ++i)
+                    for (int i = level; i < problem.n; i++)
                     {
                         std::swap(current_permutation[i], current_permutation[level]);
                         int new_cost = calculate_cost(problem, current_permutation);
@@ -124,7 +120,12 @@ namespace qap
 
                         if (should_branch)
                         {
-                            branch_and_bound(problem, best_permutation, best_cost, current_permutation, level + 1);
+                            branch_and_bound(
+                                problem,
+                                best_permutation,
+                                best_cost,
+                                current_permutation,
+                                level + 1);
                         }
 
                         std::swap(current_permutation[i], current_permutation[level]);
@@ -148,9 +149,9 @@ namespace qap
             int &best_cost,
             std::array<Permutation, 12> &initial_permutations)
         {
-            for (int i = 0; i < problem.n; ++i)
+            for (int i = 0; i < problem.n; i++)
             {
-                thread_pool.queueJob(
+                thread_pool.queue_job(
                     [&, i]
                     {
                         branch_and_bound(problem, best_permutation, best_cost, initial_permutations[i], 1);

@@ -8,7 +8,7 @@ namespace qap
     /// @brief Describes a singular instance of QAP
     struct QAP
     {
-        int n;          // number of factories
+        int n;          // number of facilities
         Mat distance;   // distance matrix
         Mat flow;       // flow matrix
     };

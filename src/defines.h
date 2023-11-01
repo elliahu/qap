@@ -12,4 +12,4 @@ namespace qap
 
     /// @brief Infinity is a big number, however this infinity is much smaller
     const int INF = std::numeric_limits<int>::max();
-}
+} // namespace qap
