@@ -59,45 +59,21 @@ namespace qap
             return cost;
         }
 
-        /// @brief Function to compute the reduced cost matrix for the current state
-        /// @param problem QAP problem
-        /// @param current_permutation current permutation
-        /// @param reduced_cost reduced cost
-        void compute_reduced_cost_matrix(QAP &problem, Permutation &current_permutation, Mat &reduced_cost)
-        {
-            int n = problem.n;
-            reduced_cost.resize(n, std::vector<int>(n, 0));
-
-            for (int facility1 = 0; facility1 < n; ++facility1)
-            {
-                for (int facility2 = 0; facility2 < n; ++facility2)
-                {
-                    int diff = problem.distance[facility1][facility1] - problem.distance[facility1][facility2] +
-                               problem.distance[facility2][facility2] - problem.distance[facility2][facility1];
-
-                    reduced_cost[facility1][facility2] = diff * problem.flow[current_permutation[facility1]][current_permutation[facility2]];
-                }
-            }
-        }
-
         /// @brief Calculates lower bound at current permutation
         /// @param problem QAP problem
         /// @param current_permutation current permutation
+        /// @param level level to which the permutation is set
         /// @return returns calculated lower bound
-        int calculate_lower_bound(QAP &problem, Permutation &current_permutation)
+        int calculate_lower_bound(QAP &problem, Permutation &current_permutation, int level)
         {
             int lower_bound = 0;
-            std::vector<std::vector<int>> reduced_cost;
-            compute_reduced_cost_matrix(problem, current_permutation, reduced_cost);
-
-            for (int facility1 = 0; facility1 < problem.n; ++facility1)
+            for (int i = 0; i < std::min(problem.n, level); ++i)
             {
-                for (int facility2 = 0; facility2 < problem.n; ++facility2)
+                for (int j = 0; j < std::min(problem.n, level); ++j)
                 {
-                    lower_bound += reduced_cost[facility1][facility2];
+                    lower_bound += problem.distance[i][j] * problem.flow[current_permutation[i]][current_permutation[j]];
                 }
             }
-
             return lower_bound;
         }
 
@@ -114,11 +90,6 @@ namespace qap
             Permutation &current_permutation,
             int level)
         {
-            best_cost_mutex.lock();
-            bool prune = calculate_cost(problem, current_permutation) >= best_cost;
-            best_cost_mutex.unlock();
-            if (prune) return;
-            
             if (level == problem.n)
             {
                 best_cost_mutex.lock();
@@ -134,13 +105,13 @@ namespace qap
             }
             else
             {
-                int lower_bound = calculate_lower_bound(problem, current_permutation);
+                int lower_bound = calculate_lower_bound(problem, current_permutation, level);
 
                 best_cost_mutex.lock();
-                bool should_loop = lower_bound < best_cost;
+                bool prune = lower_bound >= best_cost;
                 best_cost_mutex.unlock();
 
-                if (should_loop)
+                if (!prune)
                 {
                     for (int i = level; i < problem.n; ++i)
                     {
